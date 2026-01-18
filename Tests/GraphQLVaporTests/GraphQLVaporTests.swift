@@ -1,7 +1,7 @@
 import Testing
 import VaporTesting
 import GraphQL
-import GraphQLVapor
+@testable import GraphQLVapor
 
 @Suite("GraphQLVapor Tests")
 struct GraphQLVaporTests {
@@ -222,6 +222,34 @@ struct GraphQLVaporTests {
                 let response = try res.content.decode(GraphQLResult.self)
                 #expect(response.data?["test"] == "GET works")
                 #expect(response.errors.isEmpty)
+            }
+        }
+    }
+
+    @Test func graphiql() async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(
+                    name: "Query",
+                    fields: [
+                        "hello": GraphQLField(
+                            type: GraphQLString,
+                            resolve: { _, _, _, _ in
+                                "World"
+                            }
+                        )
+                    ]
+                )
+            )
+
+            let handler = GraphQLHandler(schema: schema)
+            app.get("graphql") { request in
+                try await handler.handle(request, context: EmptyContext())
+            }
+
+            try await app.test(.GET, "/graphql") { res in
+                #expect(res.status == .ok)
+                #expect(res.body.string == GraphiQLHandler.html(url: "/graphql"))
             }
         }
     }

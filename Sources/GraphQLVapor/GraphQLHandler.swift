@@ -44,6 +44,11 @@ public struct GraphQLHandler: Sendable {
                     throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
                 }
 
+                guard let query = req.url.query, query.contains("query") else {
+                    // Get requests without a `query` parameter are considered to be IDE requests
+                    return try await GraphiQLHandler.respond(to: req)
+                }
+
                 // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
                 graphQLRequest = try req.query.decode(GraphQLRequest.self)
                 do {
@@ -62,9 +67,9 @@ public struct GraphQLHandler: Sendable {
                 }
                 graphQLRequest = try req.content.decode(GraphQLRequest.self)
                 do {
-                    // Indicates a request parsing error
                     operationType = try graphQLRequest.operationType()
                 } catch {
+                    // Indicates a request parsing error
                     throw Abort(.badRequest, reason: error.localizedDescription)
                 }
             default:
