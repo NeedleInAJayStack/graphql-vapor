@@ -1,5 +1,5 @@
 {
-  "originHash" : "9c007088f34659747fd34700b8da60c2975af8894868094206fce9166e2fa42a",
+  "originHash" : "d274354204d39a0664d71049cac36e4fbcd2a9dd30368c055f7e92e1f960dd5a",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -29,12 +29,30 @@
       }
     },
     {
+      "identity" : "graphiti",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GraphQLSwift/Graphiti.git",
+      "state" : {
+        "revision" : "a23a3d232df202fc158ad2d698926325b470523c",
+        "version" : "3.0.0"
+      }
+    },
+    {
       "identity" : "graphql",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GraphQLSwift/GraphQL.git",
       "state" : {
         "revision" : "397c0f43a1eb6a401858f896263288375efcf0bd",
         "version" : "4.1.0"
+      }
+    },
+    {
+      "identity" : "graphqltransportws",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GraphQLSwift/GraphQLTransportWS.git",
+      "state" : {
+        "revision" : "77b4cee847836df4b916ddb38dcfe88d2504d196",
+        "version" : "0.2.0"
       }
     },
     {

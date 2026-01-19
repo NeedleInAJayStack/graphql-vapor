@@ -15,6 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/GraphQLSwift/GraphQL.git", from: "4.0.0"),
+        .package(url: "https://github.com/GraphQLSwift/GraphQLTransportWS.git", from: "0.2.1"),
+        .package(url: "https://github.com/GraphQLSwift/GraphQLWS.git", from: "0.2.1"),
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
     ],
     targets: [
@@ -22,6 +24,8 @@ let package = Package(
             name: "GraphQLVapor",
             dependencies: [
                 .product(name: "GraphQL", package: "GraphQL"),
+                .product(name: "GraphQLTransportWS", package: "GraphQLTransportWS"),
+                .product(name: "GraphQLWS", package: "GraphQLWS"),
                 .product(name: "Vapor", package: "vapor"),
             ]
         ),

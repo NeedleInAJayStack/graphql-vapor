@@ -2,9 +2,13 @@ import GraphQL
 import Vapor
 
 /// A handler that processes GraphQL requests through Vapor
-public struct GraphQLHandler: Sendable {
+public struct GraphQLHandler<WebSocketInit: Equatable & Codable & Sendable>: Sendable {
     public let schema: GraphQLSchema
     public let config: Config
+
+    /// A custom callback run during `connection_init` resolution that allows authorization using the `payload`.
+    /// Throw from this closure to indicate that authorization has failed.
+    public let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
 
     public struct Config: Sendable {
         public let allowGet: Bool
@@ -35,10 +39,12 @@ public struct GraphQLHandler: Sendable {
 
     public init(
         schema: GraphQLSchema,
-        config: Config = Config()
+        config: Config = Config(),
+        onWebsocketInit: @Sendable @escaping (WebSocketInit) async throws -> Void = { (_: EmptyWebsocketInit) in return }
     ) {
         self.schema = schema
         self.config = config
+        self.onWebsocketInit = onWebsocketInit
 
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
@@ -54,12 +60,13 @@ public struct GraphQLHandler: Sendable {
         let operationType: OperationType
         switch req.method {
             case .GET:
-                guard config.allowGet else {
-                    throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
+                // WebSocket handling
+                if req.headers.connection?.value.lowercased() == "upgrade" {
+                    return try await handleWebSocket(req, context: context)
                 }
 
+                // Get requests without a `query` parameter are considered to be IDE requests
                 if req.url.query == nil || !(req.url.query?.contains("query") ?? true) {
-                    // Get requests without a `query` parameter are considered to be IDE requests
                     switch config.ide.type {
                         case .graphiql:
                             return try await GraphiQLHandler.respond(to: req)
@@ -69,6 +76,10 @@ public struct GraphQLHandler: Sendable {
                     }
                 }
 
+                // Normal GET request handling
+                guard config.allowGet else {
+                    throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
+                }
                 // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
                 graphQLRequest = try req.query.decode(GraphQLRequest.self)
                 do {
