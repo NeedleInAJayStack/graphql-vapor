@@ -59,9 +59,8 @@ let graphQLHandler = GraphQLHandler(schema: schema)
 
 // Configure routes
 func routes(_ app: Application) throws {
-    app.post("graphql") { req in
-        let context = GraphQLContext()
-        return try await graphQLHandler.handle(req, context: context)
+    app.graphql { _ in
+        return GraphQLContext()
     }
 }
 ```

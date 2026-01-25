@@ -1,56 +1,25 @@
 import GraphQL
 import Vapor
 
-/// A handler that processes GraphQL requests through Vapor
-public struct GraphQLHandler<WebSocketInit: Equatable & Codable & Sendable>: Sendable {
-    public let schema: GraphQLSchema
-    public let config: Config
+struct GraphQLHandler<
+    Context: Sendable,
+    WebSocketInit: Equatable & Codable & Sendable
+>: Sendable {
+    let schema: GraphQLSchema
+    let config: GraphQLConfig<WebSocketInit>
 
-    /// A custom callback run during `connection_init` resolution that allows authorization using the `payload`.
-    /// Throw from this closure to indicate that authorization has failed.
-    public let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
-
-    public struct Config: Sendable {
-        public let allowGet: Bool
-        public let ide: IDE
-        public let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
-
-        public init(
-            allowGet: Bool = true,
-            ide: IDE = .graphiql,
-            additionalValidationRules: [@Sendable (ValidationContext) -> Visitor] = []
-        ) {
-            self.allowGet = allowGet
-            self.additionalValidationRules = additionalValidationRules
-            self.ide = ide
-        }
-
-        public struct IDE: Sendable {
-            public static var graphiql: Self { .init(type: .graphiql) }
-            public static var none: Self { .init(type: .none) }
-
-            let type: IDEType
-            enum IDEType {
-                case graphiql
-                case none
-            }
-        }
-    }
-
-    public init(
+    init(
         schema: GraphQLSchema,
-        config: Config = Config(),
-        onWebsocketInit: @Sendable @escaping (WebSocketInit) async throws -> Void = { (_: EmptyWebsocketInit) in }
+        config: GraphQLConfig<WebSocketInit>
     ) {
         self.schema = schema
         self.config = config
-        self.onWebsocketInit = onWebsocketInit
 
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
     }
 
-    public func handle<Context: Sendable>(
+    func handle(
         _ req: Request,
         context: Context
     ) async throws -> Response {

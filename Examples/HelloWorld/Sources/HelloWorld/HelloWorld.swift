@@ -5,6 +5,10 @@ import Vapor
 @main
 struct HelloWorld {
     static func main() async throws {
+        var env = try Environment.detect()
+        try LoggingSystem.bootstrap(from: &env)
+        let app = try await Application.make(env)
+
         let schema = try GraphQLSchema(
             query: GraphQLObjectType(
                 name: "Query",
@@ -18,18 +22,8 @@ struct HelloWorld {
                 ]
             )
         )
-        let graphQLHandler = GraphQLHandler(schema: schema)
-
-        var env = try Environment.detect()
-        try LoggingSystem.bootstrap(from: &env)
-        let app = try await Application.make(env)
-        app.get("graphql") { req in
-            let context = GraphQLContext()
-            return try await graphQLHandler.handle(req, context: context)
-        }
-        app.post("graphql") { req in
-            let context = GraphQLContext()
-            return try await graphQLHandler.handle(req, context: context)
+        app.graphql(schema: schema) { _ in
+            GraphQLContext()
         }
 
         do {

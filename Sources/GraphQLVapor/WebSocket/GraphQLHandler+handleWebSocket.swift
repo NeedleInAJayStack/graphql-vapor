@@ -5,7 +5,7 @@ import class GraphQLWS.Server
 import Vapor
 
 extension GraphQLHandler {
-    func handleWebSocket<Context: Sendable>(
+    func handleWebSocket(
         _ req: Request,
         context: Context
     ) async throws -> Response {
@@ -61,7 +61,7 @@ extension GraphQLHandler {
                             ).get()
                         }
                     )
-                    server.auth(onWebsocketInit)
+                    server.auth(config.websocket.onWebsocketInit)
                 case .graphqlWs:
                     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
                     let server = GraphQLWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
@@ -85,7 +85,7 @@ extension GraphQLHandler {
                             ).get()
                         }
                     )
-                    server.auth(onWebsocketInit)
+                    server.auth(config.websocket.onWebsocketInit)
                 }
             }
         )

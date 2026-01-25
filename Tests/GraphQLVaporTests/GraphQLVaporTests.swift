@@ -23,9 +23,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.post("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.POST, "/graphql") { req in
@@ -63,9 +62,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.post("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.POST, "/graphql") { req in
@@ -109,9 +107,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.post("graphql") { request in
-                try await handler.handle(request, context: Context(message: "Hello from context!"))
+            app.graphql(schema: schema) { _ in
+                Context(message: "Hello from context!")
             }
 
             try await app.test(.POST, "/graphql") { req in
@@ -143,9 +140,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.post("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.POST, "/graphql") { req in
@@ -178,9 +174,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.post("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.POST, "/graphql") { req in
@@ -212,9 +207,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.get("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.GET, "/graphql?query=%7Btest%7D") { _ in
@@ -224,6 +218,38 @@ struct GraphQLVaporTests {
                 let response = try res.content.decode(GraphQLResult.self)
                 #expect(response.data?["test"] == "GET works")
                 #expect(response.errors.isEmpty)
+            }
+        }
+    }
+
+    @Test func getDisable() async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(
+                    name: "Query",
+                    fields: [
+                        "test": GraphQLField(
+                            type: GraphQLString,
+                            resolve: { _, _, _, _ in
+                                "GET works"
+                            }
+                        ),
+                    ]
+                )
+            )
+
+            app.graphql(
+                schema: schema,
+                config: .init(
+                    allowGet: false
+                )
+            ) { _ in
+                EmptyContext()
+            }
+
+            try await app.test(.GET, "/graphql?query=%7Btest%7D") { _ in
+            } afterResponse: { res in
+                #expect(res.status == .methodNotAllowed)
             }
         }
     }
@@ -244,9 +270,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.get("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             try await app.test(.GET, "/graphql") { res in
@@ -276,9 +301,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.get("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             app.http.server.configuration.port = 0
@@ -359,9 +383,8 @@ struct GraphQLVaporTests {
                 )
             )
 
-            let handler = GraphQLHandler(schema: schema)
-            app.get("graphql") { request in
-                try await handler.handle(request, context: EmptyContext())
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
             }
 
             app.http.server.configuration.port = 0
