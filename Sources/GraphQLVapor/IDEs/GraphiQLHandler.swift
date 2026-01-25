@@ -1,14 +1,14 @@
 import Vapor
 
 enum GraphiQLHandler {
-    static func respond(to request: Request) async throws -> Response {
+    static func respond(url: String, subscriptionUrl: String) async throws -> Response {
         let response = Response()
-        try response.content.encode(html(url: request.url.string), as: .html)
+        try response.content.encode(html(url: url, subscriptionUrl: subscriptionUrl), as: .html)
         return response
     }
 
     // Source: https://github.com/graphql/graphiql/blob/main/examples/graphiql-cdn/index.html
-    static func html(url: String) -> String {
+    static func html(url: String, subscriptionUrl: String) -> String {
         """
         <!doctype html>
         <html lang="en">
@@ -73,6 +73,7 @@ enum GraphiQLHandler {
 
               const fetcher = createGraphiQLFetcher({
                 url: '\(url)',
+                subscriptionUrl: '\(subscriptionUrl)',
               });
               const plugins = [HISTORY_PLUGIN, explorerPlugin()];
 

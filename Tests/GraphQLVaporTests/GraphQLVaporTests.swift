@@ -251,7 +251,7 @@ struct GraphQLVaporTests {
 
             try await app.test(.GET, "/graphql") { res in
                 #expect(res.status == .ok)
-                #expect(res.body.string == GraphiQLHandler.html(url: "/graphql"))
+                #expect(res.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: "/graphql"))
             }
         }
     }

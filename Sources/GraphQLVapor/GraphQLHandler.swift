@@ -68,7 +68,7 @@ public struct GraphQLHandler<WebSocketInit: Equatable & Codable & Sendable>: Sen
             if req.url.query == nil || !(req.url.query?.contains("query") ?? true) {
                 switch config.ide.type {
                 case .graphiql:
-                    return try await GraphiQLHandler.respond(to: req)
+                    return try await GraphiQLHandler.respond(url: req.url.string, subscriptionUrl: req.url.string)
                 case .none:
                     // Let this get caught by the graphQLRequest decoding
                     break
