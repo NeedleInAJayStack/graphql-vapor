@@ -11,7 +11,7 @@ enum GraphiQLHandler {
     static func html(url: String, subscriptionUrl: String?) -> String {
         var graphiQLFetcherArgs = "url: '\(url)'"
         if let subscriptionUrl = subscriptionUrl {
-            graphiQLFetcherArgs += ", subscriptionsUrl: '\(subscriptionUrl)'"
+            graphiQLFetcherArgs += ", subscriptionUrl: '\(subscriptionUrl)'"
         }
         return """
         <!doctype html>
