@@ -7,6 +7,10 @@ import VaporTesting
 
 @Suite("GraphQLVapor Tests")
 struct GraphQLVaporTests {
+    let defaultHeaders: HTTPHeaders = [
+        "Accept": HTTPMediaType.jsonGraphQL.serialize(),
+    ]
+
     @Test func basicQuery() async throws {
         try await withApp { app in
             let schema = try GraphQLSchema(
@@ -27,7 +31,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql") { req in
+            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ hello }"))
             } afterResponse: { res in
                 #expect(res.status == .ok)
@@ -66,7 +70,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql") { req in
+            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
                 try req.content.encode(
                     GraphQLRequest(
                         query: "query Greet($name: String) { greet(name: $name) }",
@@ -111,7 +115,7 @@ struct GraphQLVaporTests {
                 Context(message: "Hello from context!")
             }
 
-            try await app.test(.POST, "/graphql") { req in
+            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ contextMessage }"))
             } afterResponse: { res in
                 #expect(res.status == .ok)
@@ -124,7 +128,7 @@ struct GraphQLVaporTests {
         }
     }
 
-    @Test func jsonContent() async throws {
+    @Test func jsonAcceptHeader() async throws {
         try await withApp { app in
             let schema = try GraphQLSchema(
                 query: GraphQLObjectType(
@@ -144,12 +148,72 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql") { req in
-                req.headers.replaceOrAdd(name: .accept, value: HTTPMediaType.json.serialize())
+            try await app.test(.POST, "/graphql", headers: ["Accept": HTTPMediaType.json.serialize()]) { req in
                 try req.content.encode(GraphQLRequest(query: "{ hello }"), as: .json)
             } afterResponse: { res in
                 #expect(res.status == .ok)
                 #expect(res.headers.contentType == .json)
+
+                let response = try res.content.decode(GraphQLResult.self)
+                #expect(response.data?["hello"] == "World")
+                #expect(response.errors.isEmpty)
+            }
+        }
+    }
+
+    @Test func noAcceptHeader() async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(
+                    name: "Query",
+                    fields: [
+                        "hello": GraphQLField(
+                            type: GraphQLString,
+                            resolve: { _, _, _, _ in
+                                "World"
+                            }
+                        ),
+                    ]
+                )
+            )
+
+            app.graphql(schema: schema) { _ in
+                EmptyContext()
+            }
+
+            try await app.test(.POST, "/graphql", headers: [:]) { req in
+                try req.content.encode(GraphQLRequest(query: "{ hello }"), as: .json)
+            } afterResponse: { res in
+                #expect(res.status == .notAcceptable)
+            }
+        }
+    }
+
+    @Test func defaultAcceptHeader() async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(
+                    name: "Query",
+                    fields: [
+                        "hello": GraphQLField(
+                            type: GraphQLString,
+                            resolve: { _, _, _, _ in
+                                "World"
+                            }
+                        ),
+                    ]
+                )
+            )
+
+            app.graphql(schema: schema, config: .init(allowMissingAcceptHeader: true)) { _ in
+                EmptyContext()
+            }
+
+            try await app.test(.POST, "/graphql", headers: [:]) { req in
+                try req.content.encode(GraphQLRequest(query: "{ hello }"), as: .json)
+            } afterResponse: { res in
+                #expect(res.status == .ok)
+                #expect(res.headers.contentType == .jsonGraphQL)
 
                 let response = try res.content.decode(GraphQLResult.self)
                 #expect(response.data?["hello"] == "World")
@@ -178,7 +242,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql") { req in
+            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ error }"))
             } afterResponse: { res in
                 #expect(res.status == .ok)
@@ -211,7 +275,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Btest%7D") { _ in
+            try await app.test(.GET, "/graphql?query=%7Btest%7D", headers: defaultHeaders) { _ in
             } afterResponse: { res in
                 #expect(res.status == .ok)
 
@@ -247,7 +311,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Btest%7D") { _ in
+            try await app.test(.GET, "/graphql?query=%7Btest%7D", headers: defaultHeaders) { _ in
             } afterResponse: { res in
                 #expect(res.status == .methodNotAllowed)
             }
@@ -274,7 +338,7 @@ struct GraphQLVaporTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql") { res in
+            try await app.test(.GET, "/graphql", headers: defaultHeaders) { res in
                 #expect(res.status == .ok)
                 #expect(res.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: "/graphql"))
             }

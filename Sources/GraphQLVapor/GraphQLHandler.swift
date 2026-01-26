@@ -33,13 +33,12 @@ struct GraphQLHandler<
             throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
         }
         let context = try await computeContext(request)
-        let result = try await Self.execute(
+        let result = try await execute(
             graphQLRequest: graphQLRequest,
-            on: schema,
             context: context,
             additionalValidationRules: config.additionalValidationRules
         )
-        return try Self.encodeResponse(clientMediaTypes: request.headers.accept.mediaTypes, result: result)
+        return try encodeResponse(result: result, headers: request.headers)
     }
 
     // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#post
@@ -49,18 +48,16 @@ struct GraphQLHandler<
         }
         let graphQLRequest = try request.content.decode(GraphQLRequest.self)
         let context = try await computeContext(request)
-        let result = try await Self.execute(
+        let result = try await execute(
             graphQLRequest: graphQLRequest,
-            on: schema,
             context: context,
             additionalValidationRules: config.additionalValidationRules
         )
-        return try Self.encodeResponse(clientMediaTypes: request.headers.accept.mediaTypes, result: result)
+        return try encodeResponse(result: result, headers: request.headers)
     }
 
-    private static func execute(
+    private func execute(
         graphQLRequest: GraphQLRequest,
-        on schema: GraphQLSchema,
         context: Context,
         additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
     ) async throws -> GraphQLResult {
@@ -86,10 +83,10 @@ struct GraphQLHandler<
     }
 
     // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
-    private static func encodeResponse(clientMediaTypes: [HTTPMediaType], result: GraphQLResult) throws -> Response {
+    private func encodeResponse(result: GraphQLResult, headers: HTTPHeaders) throws -> Response {
         let response = Response()
         var encoded = false
-        for mediaType in clientMediaTypes {
+        for mediaType in headers.accept.mediaTypes {
             // Try to respond in the best media type, in order
             do {
                 try response.content.encode(result, as: mediaType)
@@ -100,8 +97,12 @@ struct GraphQLHandler<
             }
         }
         if !encoded {
-            // Use default if we haven't encoded yet
-            try response.content.encode(result)
+            if config.allowMissingAcceptHeader {
+                // Use default of `application/graphql-response+json`
+                try response.content.encode(result)
+            } else {
+                throw Abort(.notAcceptable, reason: "An `Accept` header must be provided")
+            }
         }
         return response
     }
