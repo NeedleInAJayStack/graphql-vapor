@@ -340,6 +340,33 @@ struct GraphQLVaporTests {
 
             try await app.test(.GET, "/graphql", headers: defaultHeaders) { res in
                 #expect(res.status == .ok)
+                #expect(res.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: nil))
+            }
+        }
+    }
+
+    @Test func graphiqlSubscription() async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(
+                    name: "Query",
+                    fields: [
+                        "hello": GraphQLField(
+                            type: GraphQLString,
+                            resolve: { _, _, _, _ in
+                                "World"
+                            }
+                        ),
+                    ]
+                )
+            )
+
+            app.graphql(schema: schema, config: .init(subscriptionProtocols: [.websocket])) { _ in
+                EmptyContext()
+            }
+
+            try await app.test(.GET, "/graphql", headers: defaultHeaders) { res in
+                #expect(res.status == .ok)
                 #expect(res.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: "/graphql"))
             }
         }
@@ -365,7 +392,7 @@ struct GraphQLVaporTests {
                 )
             )
 
-            app.graphql(schema: schema) { _ in
+            app.graphql(schema: schema, config: .init(subscriptionProtocols: [.websocket])) { _ in
                 EmptyContext()
             }
 
@@ -447,7 +474,7 @@ struct GraphQLVaporTests {
                 )
             )
 
-            app.graphql(schema: schema) { _ in
+            app.graphql(schema: schema, config: .init(subscriptionProtocols: [.websocket])) { _ in
                 EmptyContext()
             }
 

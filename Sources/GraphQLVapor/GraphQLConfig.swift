@@ -4,6 +4,7 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
     let allowGet: Bool
     let allowMissingAcceptHeader: Bool
     let ide: IDE
+    let subscriptionProtocols: Set<SubscriptionProtocol>
     let websocket: WebSocket
     let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
 
@@ -18,6 +19,7 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
         allowGet: Bool = true,
         allowMissingAcceptHeader: Bool = false,
         ide: IDE = .graphiql,
+        subscriptionProtocols: Set<SubscriptionProtocol> = [],
         websocket: WebSocket = .init(
             // Including this strongly-typed argument is required to avoid compiler failures on Swift 6.2.3.
             onWebsocketInit: { (_: EmptyWebsocketInit) in }
@@ -28,10 +30,11 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
         self.allowMissingAcceptHeader = allowMissingAcceptHeader
         self.additionalValidationRules = additionalValidationRules
         self.ide = ide
+        self.subscriptionProtocols = subscriptionProtocols
         self.websocket = websocket
     }
 
-    public struct IDE: Sendable {
+    public struct IDE: Sendable, Equatable {
         /// GraphiQL: https://github.com/graphql/graphiql
         public static var graphiql: Self { .init(type: .graphiql) }
 
@@ -42,6 +45,16 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
         enum IDEType {
             case graphiql
             case none
+        }
+    }
+
+    public struct SubscriptionProtocol: Sendable, Hashable {
+        /// Expose GraphQL subscriptions over WebSockets
+        public static var websocket: Self { .init(type: .websocket) }
+
+        let type: SubscriptionProtocolType
+        enum SubscriptionProtocolType {
+            case websocket
         }
     }
 

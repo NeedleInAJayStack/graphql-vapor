@@ -1,15 +1,19 @@
 import Vapor
 
 enum GraphiQLHandler {
-    static func respond(url: String, subscriptionUrl: String) async throws -> Response {
+    static func respond(url: String, subscriptionUrl: String?) async throws -> Response {
         let response = Response()
         try response.content.encode(html(url: url, subscriptionUrl: subscriptionUrl), as: .html)
         return response
     }
 
     // Source: https://github.com/graphql/graphiql/blob/main/examples/graphiql-cdn/index.html
-    static func html(url: String, subscriptionUrl: String) -> String {
-        """
+    static func html(url: String, subscriptionUrl: String?) -> String {
+        var graphiQLFetcherArgs = "url: '\(url)'"
+        if let subscriptionUrl = subscriptionUrl {
+            graphiQLFetcherArgs += ", subscriptionsUrl: '\(subscriptionUrl)'"
+        }
+        return """
         <!doctype html>
         <html lang="en">
           <head>
@@ -71,10 +75,7 @@ enum GraphiQLHandler {
               import { explorerPlugin } from '@graphiql/plugin-explorer';
               import 'graphiql/setup-workers/esm.sh';
 
-              const fetcher = createGraphiQLFetcher({
-                url: '\(url)',
-                subscriptionUrl: '\(subscriptionUrl)',
-              });
+              const fetcher = createGraphiQLFetcher({\(graphiQLFetcherArgs)});
               const plugins = [HISTORY_PLUGIN, explorerPlugin()];
 
               function App() {

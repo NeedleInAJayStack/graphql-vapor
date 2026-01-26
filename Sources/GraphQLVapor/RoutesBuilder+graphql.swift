@@ -30,7 +30,10 @@ public extension RoutesBuilder {
         let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, config: config, computeContext: computeContext)
         get(path) { request in
             // WebSocket handling
-            if request.headers.connection?.value.lowercased() == "upgrade" {
+            if
+                config.subscriptionProtocols.contains(.websocket),
+                request.headers.connection?.value.lowercased() == "upgrade"
+            {
                 return try await handler.handleWebSocket(request: request)
             }
 
@@ -38,7 +41,10 @@ public extension RoutesBuilder {
             if request.url.query == nil || !(request.url.query?.contains("query") ?? true) {
                 switch config.ide.type {
                 case .graphiql:
-                    return try await GraphiQLHandler.respond(url: request.url.string, subscriptionUrl: request.url.string)
+                    return try await GraphiQLHandler.respond(
+                        url: request.url.string,
+                        subscriptionUrl: config.subscriptionProtocols.contains(.websocket) ? request.url.string : nil
+                    )
                 case .none:
                     // Let this get caught by the graphQLRequest decoding
                     break
