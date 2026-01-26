@@ -1,11 +1,11 @@
 import GraphQL
 
 public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Sendable {
-    public let allowGet: Bool
-    public let allowMissingAcceptHeader: Bool
-    public let ide: IDE
-    public let websocket: WebSocket
-    public let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
+    let allowGet: Bool
+    let allowMissingAcceptHeader: Bool
+    let ide: IDE
+    let websocket: WebSocket
+    let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
 
     /// Configuration for GraphQL responses
     /// - Parameters:
@@ -46,7 +46,7 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
     }
 
     public struct WebSocket: Sendable {
-        public let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
+        let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
 
         /// GraphQL over WebSocket configuration
         /// - Parameter onWebsocketInit: A custom callback run during `connection_init` resolution that allows authorization using the `payload`.
