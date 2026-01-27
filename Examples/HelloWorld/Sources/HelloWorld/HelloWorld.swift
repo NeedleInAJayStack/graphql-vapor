@@ -1,3 +1,4 @@
+import AsyncAlgorithms
 import GraphQL
 import GraphQLVapor
 import Vapor
@@ -26,20 +27,15 @@ struct HelloWorld {
                 fields: [
                     "hello": GraphQLField(
                         type: GraphQLString,
-                        description: "Emits `world` every 3 seconds",
+                        description: "Emits an updated `World` message every 3 seconds",
                         resolve: { eventResult, _, _, _ in
                             eventResult
                         },
                         subscribe: { _, _, anyContext, _ in
-                            let context = anyContext as! GraphQLContext
-                            return AsyncThrowingStream<String, Error> { continuation in
-                                context.subscriptionTask = Task {
-                                    for i in 0 ..< 10000 {
-                                        try await Task.sleep(for: .seconds(3))
-                                        try Task.checkCancellation()
-                                        continuation.yield("World for the \(i) time")
-                                    }
-                                }
+                            let clock = ContinuousClock()
+                            let start = clock.now
+                            return AsyncTimerSequence(interval: .seconds(3), clock: ContinuousClock()).map { instant in
+                                return "World at \(start.duration(to: instant))"
                             }
                         }
                     ),
@@ -60,11 +56,5 @@ struct HelloWorld {
         try await app.asyncShutdown()
     }
 
-    class GraphQLContext: @unchecked Sendable {
-        var subscriptionTask: Task<Void, Error>?
-
-        deinit {
-            subscriptionTask?.cancel()
-        }
-    }
+    struct GraphQLContext: @unchecked Sendable { }
 }
