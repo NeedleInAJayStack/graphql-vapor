@@ -171,8 +171,6 @@ struct WebSocketTests {
             }
         }
     }
-
-    struct EmptyContext: Sendable {}
 }
 
 /// A very simple publish/subscriber used for testing
