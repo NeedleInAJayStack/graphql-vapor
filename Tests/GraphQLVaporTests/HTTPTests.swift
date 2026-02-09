@@ -13,7 +13,7 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
+            try await app.test(.POST, "/graphql", headers: jsonGraphQLHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ hello }"))
             } afterResponse: { response in
                 #expect(response.status == .ok)
@@ -52,7 +52,7 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
+            try await app.test(.POST, "/graphql", headers: jsonGraphQLHeaders) { req in
                 try req.content.encode(
                     GraphQLRequest(
                         query: "query Greet($name: String) { greet(name: $name) }",
@@ -97,7 +97,7 @@ struct HTTPTests {
                 Context(message: "Hello from context!")
             }
 
-            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
+            try await app.test(.POST, "/graphql", headers: jsonGraphQLHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ contextMessage }"))
             } afterResponse: { response in
                 #expect(response.status == .ok)
@@ -116,7 +116,7 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.POST, "/graphql", headers: ["Accept": HTTPMediaType.json.serialize()]) { req in
+            try await app.test(.POST, "/graphql", headers: jsonHeaders) { req in
                 try req.content.encode(GraphQLRequest(query: "{ hello }"), as: .json)
             } afterResponse: { response in
                 #expect(response.status == .ok)
@@ -162,46 +162,13 @@ struct HTTPTests {
         }
     }
 
-    @Test func resolverError() async throws {
-        try await withApp { app in
-            let schema = try GraphQLSchema(
-                query: GraphQLObjectType(
-                    name: "Query",
-                    fields: [
-                        "error": GraphQLField(
-                            type: GraphQLString,
-                            resolve: { _, _, _, _ in
-                                throw GraphQLError(message: "Something went wrong")
-                            }
-                        ),
-                    ]
-                )
-            )
-
-            app.graphql(schema: schema) { _ in
-                EmptyContext()
-            }
-
-            try await app.test(.POST, "/graphql", headers: defaultHeaders) { req in
-                try req.content.encode(GraphQLRequest(query: "{ error }"))
-            } afterResponse: { response in
-                #expect(response.status == .ok)
-                #expect(response.headers.contentType == .jsonGraphQL)
-
-                let response = try response.content.decode(GraphQLResult.self)
-                #expect(!response.errors.isEmpty)
-                #expect(response.errors.first?.message == "Something went wrong")
-            }
-        }
-    }
-
     @Test func allowGetRequest() async throws {
         try await withApp { app in
             app.graphql(schema: helloWorldSchema) { _ in
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: defaultHeaders) { _ in
+            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) { _ in
             } afterResponse: { response in
                 #expect(response.status == .ok)
 
@@ -223,7 +190,7 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: defaultHeaders) { _ in
+            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) { _ in
             } afterResponse: { response in
                 #expect(response.status == .methodNotAllowed)
             }
@@ -255,24 +222,4 @@ struct HTTPTests {
             }
         }
     }
-
-    let defaultHeaders: HTTPHeaders = [
-        "Accept": HTTPMediaType.jsonGraphQL.serialize(),
-    ]
-
-    let helloWorldSchema = try! GraphQLSchema(
-        query: GraphQLObjectType(
-            name: "Query",
-            fields: [
-                "hello": GraphQLField(
-                    type: GraphQLString,
-                    resolve: { _, _, _, _ in
-                        "World"
-                    }
-                ),
-            ]
-        )
-    )
-
-    struct EmptyContext: Sendable {}
 }

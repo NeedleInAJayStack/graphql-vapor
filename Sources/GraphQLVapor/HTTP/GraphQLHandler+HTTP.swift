@@ -16,7 +16,7 @@ extension GraphQLHandler {
             throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
         }
         let context = try await computeContext(request)
-        let result = try await execute(
+        let result = await execute(
             graphQLRequest: graphQLRequest,
             context: context,
             additionalValidationRules: config.additionalValidationRules
@@ -31,7 +31,7 @@ extension GraphQLHandler {
         }
         let graphQLRequest = try request.content.decode(GraphQLRequest.self)
         let context = try await computeContext(request)
-        let result = try await execute(
+        let result = await execute(
             graphQLRequest: graphQLRequest,
             context: context,
             additionalValidationRules: config.additionalValidationRules
@@ -43,7 +43,7 @@ extension GraphQLHandler {
         graphQLRequest: GraphQLRequest,
         context: Context,
         additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
-    ) async throws -> GraphQLResult {
+    ) async -> GraphQLResult {
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#validation
         let validationRules = GraphQL.specifiedRules + additionalValidationRules
 
@@ -59,9 +59,11 @@ extension GraphQLHandler {
                 operationName: graphQLRequest.operationName,
                 validationRules: validationRules
             )
-        } catch {
+        } catch let error as GraphQLError {
             // This indicates a request parsing error
-            throw Abort(.badRequest, reason: error.localizedDescription)
+            return GraphQLResult(data: nil, errors: [error])
+        } catch {
+            return GraphQLResult(data: nil, errors: [GraphQLError(message: error.localizedDescription)])
         }
         return result
     }
@@ -74,36 +76,45 @@ extension GraphQLHandler {
 
         let response = Response()
 
+        let configuredMediaTypes: Set<HTTPMediaType> = [.jsonGraphQL, .json]
+
         // Try to respond with the best matching media type, in order
+        var selectedMediaType: HTTPMediaType? = nil
         for mediaType in headers.accept.mediaTypes {
-            do {
-                try response.content.encode(result, as: mediaType)
-                return response
-            } catch {
-                continue
+            if configuredMediaTypes.contains(mediaType) {
+                selectedMediaType = mediaType
+                break
             }
         }
 
         // If no exact matches, look for any matching wildcards
-        let acceptableMediaSet = HTTPMediaTypeSet(mediaTypes: headers.accept.mediaTypes)
-        for mediaType: HTTPMediaType in [.jsonGraphQL, .json] {
-            if acceptableMediaSet.contains(mediaType) {
-                do {
-                    try response.content.encode(result, as: mediaType)
-                    return response
-                } catch {
-                    continue
+        if selectedMediaType == nil {
+            let acceptableMediaSet = HTTPMediaTypeSet(mediaTypes: headers.accept.mediaTypes)
+            for mediaType in configuredMediaTypes {
+                if acceptableMediaSet.contains(mediaType) {
+                    selectedMediaType = mediaType
+                    break
                 }
             }
         }
 
         // Use the default if configured to do so
-        if config.allowMissingAcceptHeader {
-            try response.content.encode(result, as: .jsonGraphQL)
-            return response
+        if selectedMediaType == nil, config.allowMissingAcceptHeader {
+            selectedMediaType = .jsonGraphQL
         }
 
-        // Fail
-        throw Abort(.notAcceptable)
+        guard let selectedMediaType else {
+            // Fail
+            throw Abort(.notAcceptable)
+        }
+
+        if selectedMediaType == .jsonGraphQL, result.data == nil {
+            // We must return `bad request` with the content if there were failures preventing a partial result
+            // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#applicationgraphql-responsejson
+            response.status = .badRequest
+        }
+
+        try response.content.encode(result, as: selectedMediaType)
+        return response
     }
 }
