@@ -9,7 +9,6 @@ extension GraphQLHandler {
         request: Request
     ) async throws -> Response {
         let subProtocol = try negotiateSubProtocol(request: request)
-        let context = try await computeContext(request)
         let response = Response(status: .switchingProtocols)
         response.upgrader = WebSocketUpgrader(
             maxFrameSize: .default,
@@ -26,7 +25,12 @@ extension GraphQLHandler {
                     let server = GraphQLTransportWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
                         messenger: messenger,
                         onExecute: { graphQLRequest in
-                            try await graphql(
+                            let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+                                vaporRequest: request,
+                                graphQLRequest: graphQLRequest
+                            )
+                            let context = try await computeContext(graphQLContextComputationInputs)
+                            return try await graphql(
                                 schema: schema,
                                 request: graphQLRequest.query,
                                 rootValue: rootValue,
@@ -36,7 +40,12 @@ extension GraphQLHandler {
                             )
                         },
                         onSubscribe: { graphQLRequest in
-                            try await graphqlSubscribe(
+                            let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+                                vaporRequest: request,
+                                graphQLRequest: graphQLRequest
+                            )
+                            let context = try await computeContext(graphQLContextComputationInputs)
+                            return try await graphqlSubscribe(
                                 schema: schema,
                                 request: graphQLRequest.query,
                                 rootValue: rootValue,
@@ -52,7 +61,12 @@ extension GraphQLHandler {
                     let server = GraphQLWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
                         messenger: messenger,
                         onExecute: { graphQLRequest in
-                            try await graphql(
+                            let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+                                vaporRequest: request,
+                                graphQLRequest: graphQLRequest
+                            )
+                            let context = try await computeContext(graphQLContextComputationInputs)
+                            return try await graphql(
                                 schema: schema,
                                 request: graphQLRequest.query,
                                 rootValue: rootValue,
@@ -62,7 +76,12 @@ extension GraphQLHandler {
                             )
                         },
                         onSubscribe: { graphQLRequest in
-                            try await graphqlSubscribe(
+                            let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+                                vaporRequest: request,
+                                graphQLRequest: graphQLRequest
+                            )
+                            let context = try await computeContext(graphQLContextComputationInputs)
+                            return try await graphqlSubscribe(
                                 schema: schema,
                                 request: graphQLRequest.query,
                                 rootValue: rootValue,

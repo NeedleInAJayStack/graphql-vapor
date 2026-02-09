@@ -87,3 +87,18 @@ Response:
 ```
 
 See the `RouteBuilder.graphql` function documentation for advanced configuration options.
+
+### Computing GraphQL Context
+
+The required closure in the `graphql` function is used to compute the `GraphQLContext` object, which is injected into each GraphQL resolver. The `inputs` argument passes in data from the request so that the Context can be created dynamically:
+
+```swift
+app.graphql(schema: schema) { inputs in
+    return GraphQLContext(
+        userID: inputs.vaporRequest.auth.userID,
+        logger: inputs.vaporRequest.logger,
+        debug: inputs.vaporRequest.headers[.init("debug")!] != nil,
+        operationName: inputs.graphQLRequest.operationName
+    )
+}
+```
