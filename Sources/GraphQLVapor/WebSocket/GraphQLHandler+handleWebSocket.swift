@@ -9,7 +9,10 @@ extension GraphQLHandler {
         request: Request
     ) async throws -> Response {
         let subProtocol = try negotiateSubProtocol(request: request)
-        let context = try await computeContext(request)
+        let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+            vaporRequest: request
+        )
+        let context = try await computeContext(graphQLContextComputationInputs)
         let response = Response(status: .switchingProtocols)
         response.upgrader = WebSocketUpgrader(
             maxFrameSize: .default,

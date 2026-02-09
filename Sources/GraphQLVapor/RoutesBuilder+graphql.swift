@@ -26,7 +26,7 @@ public extension RoutesBuilder {
         schema: GraphQLSchema,
         rootValue: any Sendable = (),
         config: GraphQLConfig<WebSocketInit> = GraphQLConfig<EmptyWebsocketInit>(),
-        computeContext: @Sendable @escaping (Request) async throws -> Context
+        computeContext: @Sendable @escaping (GraphQLContextComputationInputs) async throws -> Context
     ) {
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
@@ -66,4 +66,8 @@ public extension RoutesBuilder {
             try await handler.handlePost(request: request)
         }
     }
+}
+
+public struct GraphQLContextComputationInputs: Sendable {
+    public let vaporRequest: Request
 }
