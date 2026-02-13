@@ -18,13 +18,30 @@ extension GraphQLHandler {
                 }
             },
             onUpgrade: { websocket in
+                let messageStream = AsyncThrowingStream<String, Error> { continuation in
+                    websocket.onText { _, text in
+                        continuation.yield(text)
+                    }
+                    websocket.onClose.whenComplete { result in
+                        switch result {
+                        case .success:
+                            continuation.finish()
+                        case let .failure(error):
+                            continuation.finish(throwing: error)
+                        }
+                    }
+                }
+
                 let messenger = WebSocketMessenger(websocket: websocket)
                 switch subProtocol {
                 case .graphqlTransportWs:
                     // https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
-                    let server = GraphQLTransportWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
+                    let server = GraphQLTransportWS.Server<WebSocketInit, WebSocketInitResult, AsyncThrowingStream<GraphQLResult, Error>>(
                         messenger: messenger,
-                        onExecute: { graphQLRequest in
+                        onInit: { initPayload in
+                            try await config.websocket.onWebsocketInit(initPayload)
+                        },
+                        onExecute: { graphQLRequest, _ in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
                                 graphQLRequest: graphQLRequest
@@ -39,7 +56,7 @@ extension GraphQLHandler {
                                 operationName: graphQLRequest.operationName
                             )
                         },
-                        onSubscribe: { graphQLRequest in
+                        onSubscribe: { graphQLRequest, _ in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
                                 graphQLRequest: graphQLRequest
@@ -55,12 +72,18 @@ extension GraphQLHandler {
                             ).get()
                         }
                     )
-                    server.auth(config.websocket.onWebsocketInit)
+                    Task {
+                        // This task completes upon websocket closure
+                        try await server.listen(to: messageStream)
+                    }
                 case .graphqlWs:
                     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
-                    let server = GraphQLWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
+                    let server = GraphQLWS.Server<WebSocketInit, WebSocketInitResult, AsyncThrowingStream<GraphQLResult, Error>>(
                         messenger: messenger,
-                        onExecute: { graphQLRequest in
+                        onInit: { initPayload in
+                            try await config.websocket.onWebsocketInit(initPayload)
+                        },
+                        onExecute: { graphQLRequest, _ in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
                                 graphQLRequest: graphQLRequest
@@ -75,7 +98,7 @@ extension GraphQLHandler {
                                 operationName: graphQLRequest.operationName
                             )
                         },
-                        onSubscribe: { graphQLRequest in
+                        onSubscribe: { graphQLRequest, _ in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
                                 graphQLRequest: graphQLRequest
@@ -91,7 +114,10 @@ extension GraphQLHandler {
                             ).get()
                         }
                     )
-                    server.auth(config.websocket.onWebsocketInit)
+                    Task {
+                        // This task completes upon websocket closure
+                        try await server.listen(to: messageStream)
+                    }
                 }
             }
         )

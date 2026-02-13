@@ -20,19 +20,20 @@ public extension RoutesBuilder {
     ///   - computeContext: A closure used to compute the GraphQL context from incoming requests. This must be provided.
     func graphql<
         Context: Sendable,
-        WebSocketInit: Equatable & Codable & Sendable
+        WebSocketInit: Equatable & Codable & Sendable,
+        WebSocketInitResult: Sendable
     >(
         _ path: [PathComponent] = ["graphql"],
         schema: GraphQLSchema,
         rootValue: any Sendable = (),
-        config: GraphQLConfig<WebSocketInit> = GraphQLConfig<EmptyWebsocketInit>(),
+        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<EmptyWebsocketInit, Void>(),
         computeContext: @Sendable @escaping (GraphQLContextComputationInputs) async throws -> Context
     ) {
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#request
-        let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
+        let handler = GraphQLHandler<Context, WebSocketInit, WebSocketInitResult>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
         get(path) { request in
             // WebSocket handling
             if
