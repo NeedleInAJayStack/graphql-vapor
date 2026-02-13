@@ -26,7 +26,7 @@ public extension RoutesBuilder {
         _ path: [PathComponent] = ["graphql"],
         schema: GraphQLSchema,
         rootValue: any Sendable = (),
-        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<EmptyWebsocketInit, Void>(),
+        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<EmptyWebSocketInit, Void>(),
         computeContext: @Sendable @escaping (GraphQLContextComputationInputs<WebSocketInitResult>) async throws -> Context
     ) {
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)

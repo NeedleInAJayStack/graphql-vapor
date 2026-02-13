@@ -1,1 +1,1 @@
-public struct EmptyWebsocketInit: Equatable, Codable, Sendable {}
+public struct EmptyWebSocketInit: Equatable, Codable, Sendable {}
