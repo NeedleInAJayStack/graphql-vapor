@@ -15,9 +15,10 @@ extension GraphQLHandler {
         guard operationType != .mutation else {
             throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
         }
-        let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+        let graphQLContextComputationInputs = GraphQLContextComputationInputs<WebSocketInitResult>(
             vaporRequest: request,
-            graphQLRequest: graphQLRequest
+            graphQLRequest: graphQLRequest,
+            websocketInitResult: nil
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(
@@ -34,9 +35,10 @@ extension GraphQLHandler {
             throw Abort(.unsupportedMediaType, reason: "Missing `Content-Type` header")
         }
         let graphQLRequest = try request.content.decode(GraphQLRequest.self)
-        let graphQLContextComputationInputs = GraphQLContextComputationInputs(
+        let graphQLContextComputationInputs = GraphQLContextComputationInputs<WebSocketInitResult>(
             vaporRequest: request,
-            graphQLRequest: graphQLRequest
+            graphQLRequest: graphQLRequest,
+            websocketInitResult: nil
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(

@@ -41,10 +41,11 @@ extension GraphQLHandler {
                         onInit: { initPayload in
                             try await config.websocket.onWebsocketInit(initPayload)
                         },
-                        onExecute: { graphQLRequest, _ in
+                        onExecute: { graphQLRequest, initResult in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
-                                graphQLRequest: graphQLRequest
+                                graphQLRequest: graphQLRequest,
+                                websocketInitResult: initResult
                             )
                             let context = try await computeContext(graphQLContextComputationInputs)
                             return try await graphql(
@@ -56,10 +57,11 @@ extension GraphQLHandler {
                                 operationName: graphQLRequest.operationName
                             )
                         },
-                        onSubscribe: { graphQLRequest, _ in
+                        onSubscribe: { graphQLRequest, initResult in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
-                                graphQLRequest: graphQLRequest
+                                graphQLRequest: graphQLRequest,
+                                websocketInitResult: initResult
                             )
                             let context = try await computeContext(graphQLContextComputationInputs)
                             return try await graphqlSubscribe(
@@ -83,10 +85,11 @@ extension GraphQLHandler {
                         onInit: { initPayload in
                             try await config.websocket.onWebsocketInit(initPayload)
                         },
-                        onExecute: { graphQLRequest, _ in
+                        onExecute: { graphQLRequest, initResult in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
-                                graphQLRequest: graphQLRequest
+                                graphQLRequest: graphQLRequest,
+                                websocketInitResult: initResult
                             )
                             let context = try await computeContext(graphQLContextComputationInputs)
                             return try await graphql(
@@ -98,10 +101,11 @@ extension GraphQLHandler {
                                 operationName: graphQLRequest.operationName
                             )
                         },
-                        onSubscribe: { graphQLRequest, _ in
+                        onSubscribe: { graphQLRequest, initResult in
                             let graphQLContextComputationInputs = GraphQLContextComputationInputs(
                                 vaporRequest: request,
-                                graphQLRequest: graphQLRequest
+                                graphQLRequest: graphQLRequest,
+                                websocketInitResult: initResult
                             )
                             let context = try await computeContext(graphQLContextComputationInputs)
                             return try await graphqlSubscribe(

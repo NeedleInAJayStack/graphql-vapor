@@ -9,5 +9,5 @@ struct GraphQLHandler<
     let schema: GraphQLSchema
     let rootValue: any Sendable
     let config: GraphQLConfig<WebSocketInit, WebSocketInitResult>
-    let computeContext: @Sendable (GraphQLContextComputationInputs) async throws -> Context
+    let computeContext: @Sendable (GraphQLContextComputationInputs<WebSocketInitResult>) async throws -> Context
 }
