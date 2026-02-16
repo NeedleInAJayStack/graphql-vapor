@@ -3,8 +3,6 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FGraphQLSwift%2Fgraphql-vapor%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/GraphQLSwift/graphql-vapor)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FGraphQLSwift%2Fgraphql-vapor%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/GraphQLSwift/graphql-vapor)
 
-> ***WARNING***: This package is in v0.x beta. It's API is still evolving and is subject to breaking changes in minor version bumps.
-
 A Swift library for integrating [GraphQL](https://github.com/GraphQLSwift/GraphQL) with [Vapor](https://github.com/vapor/vapor), enabling you to easily expose GraphQL APIs in your Vapor applications.
 
 ## Features
