@@ -8,6 +8,7 @@ public struct GraphQLConfig<
 >: Sendable {
     let allowGet: Bool
     let allowMissingAcceptHeader: Bool
+    let maxBodySize: ByteCount?
     let ide: IDE
     let subscriptionProtocols: Set<SubscriptionProtocol>
     let websocket: WebSocket
@@ -17,6 +18,7 @@ public struct GraphQLConfig<
     /// - Parameters:
     ///   - allowGet: Whether to allow GraphQL queries via `GET` requests.
     ///   - allowMissingAcceptHeader: Whether to allow clients to omit "Accept" headers and default to `application/graphql-response+json` encoded responses.
+    ///   - maxBodySize: The maximum size of GraphQL requests in bytes. If not provided, this uses the default [`app.routes.defaultMaxBodySize`](https://docs.vapor.codes/basics/routing/#body-streaming)
     ///   - ide: The IDE to expose
     ///   - subscriptionProtocols: Protocols used to support GraphQL subscription requests
     ///   - websocket: WebSocket-specific configuration
@@ -24,6 +26,7 @@ public struct GraphQLConfig<
     public init(
         allowGet: Bool = true,
         allowMissingAcceptHeader: Bool = false,
+        maxBodySize: ByteCount? = nil,
         ide: IDE = .graphiql,
         subscriptionProtocols: Set<SubscriptionProtocol> = [],
         websocket: WebSocket = .init(
@@ -34,12 +37,14 @@ public struct GraphQLConfig<
     ) {
         self.allowGet = allowGet
         self.allowMissingAcceptHeader = allowMissingAcceptHeader
+        self.maxBodySize = maxBodySize
         self.additionalValidationRules = additionalValidationRules
         self.ide = ide
         self.subscriptionProtocols = subscriptionProtocols
         self.websocket = websocket
     }
 
+    /// An embeddable GraphQL IDE
     public struct IDE: Sendable, Equatable {
         /// GraphiQL: https://github.com/graphql/graphiql
         public static var graphiql: Self {
@@ -58,6 +63,7 @@ public struct GraphQLConfig<
         }
     }
 
+    /// A GraphQL subscription implementation
     public struct SubscriptionProtocol: Sendable, Hashable {
         /// Expose GraphQL subscriptions over WebSockets
         public static var websocket: Self {
@@ -70,6 +76,7 @@ public struct GraphQLConfig<
         }
     }
 
+    /// WebSocket configuration
     public struct WebSocket: Sendable {
         let onWebSocketInit: @Sendable (WebSocketInit, Request) async throws -> WebSocketInitResult
 

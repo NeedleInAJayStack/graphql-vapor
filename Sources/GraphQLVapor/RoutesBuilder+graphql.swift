@@ -63,7 +63,7 @@ public extension RoutesBuilder {
             }
             return try await handler.handleGet(request: request)
         }
-        post(path) { request in
+        on(.POST, path, body: .collect(maxSize: config.maxBodySize)) { request in
             try await handler.handlePost(request: request)
         }
     }
