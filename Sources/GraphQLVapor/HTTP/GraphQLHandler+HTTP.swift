@@ -86,24 +86,16 @@ extension GraphQLHandler {
 
         let response = Response()
 
-        let configuredMediaTypes: Set<HTTPMediaType> = [.jsonGraphQL, .json]
+        let configuredMediaTypes: [HTTPMediaType] = [.jsonGraphQL, .json]
 
         // Try to respond with the best matching media type, in order
         var selectedMediaType: HTTPMediaType? = nil
-        for mediaType in headers.accept.mediaTypes {
-            if configuredMediaTypes.contains(mediaType) {
-                selectedMediaType = mediaType
-                break
-            }
-        }
-
-        // If no exact matches, look for any matching wildcards
-        if selectedMediaType == nil {
-            let acceptableMediaSet = HTTPMediaTypeSet(mediaTypes: headers.accept.mediaTypes)
-            for mediaType in configuredMediaTypes {
-                if acceptableMediaSet.contains(mediaType) {
-                    selectedMediaType = mediaType
-                    break
+        headerLoop: for mediaType in headers.accept.mediaTypes {
+            for configuredMediaType in configuredMediaTypes {
+                // Note that `==` handles wildcards.
+                if mediaType == configuredMediaType {
+                    selectedMediaType = configuredMediaType
+                    break headerLoop
                 }
             }
         }
