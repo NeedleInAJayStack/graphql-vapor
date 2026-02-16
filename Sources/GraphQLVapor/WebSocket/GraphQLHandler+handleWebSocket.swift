@@ -11,7 +11,7 @@ extension GraphQLHandler {
         let subProtocol = try negotiateSubProtocol(request: request)
         let response = Response(status: .switchingProtocols)
         response.upgrader = WebSocketUpgrader(
-            maxFrameSize: .default,
+            maxFrameSize: .init(integerLiteral: (config.maxBodySize ?? request.application.routes.defaultMaxBodySize).value),
             shouldUpgrade: {
                 request.eventLoop.makeFutureWithTask {
                     ["Sec-WebSocket-Protocol": subProtocol.rawValue]

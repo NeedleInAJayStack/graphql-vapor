@@ -8,6 +8,7 @@ public struct GraphQLConfig<
 >: Sendable {
     let allowGet: Bool
     let allowMissingAcceptHeader: Bool
+    let maxBodySize: ByteCount?
     let ide: IDE
     let subscriptionProtocols: Set<SubscriptionProtocol>
     let websocket: WebSocket
@@ -17,6 +18,7 @@ public struct GraphQLConfig<
     /// - Parameters:
     ///   - allowGet: Whether to allow GraphQL queries via `GET` requests.
     ///   - allowMissingAcceptHeader: Whether to allow clients to omit "Accept" headers and default to `application/graphql-response+json` encoded responses.
+    ///   - maxBodySize: The maximum size of GraphQL requests in bytes. If not provided, this uses the default [`app.routes.defaultMaxBodySize`](https://docs.vapor.codes/basics/routing/#body-streaming)
     ///   - ide: The IDE to expose
     ///   - subscriptionProtocols: Protocols used to support GraphQL subscription requests
     ///   - websocket: WebSocket-specific configuration
@@ -24,6 +26,7 @@ public struct GraphQLConfig<
     public init(
         allowGet: Bool = true,
         allowMissingAcceptHeader: Bool = false,
+        maxBodySize: ByteCount? = nil,
         ide: IDE = .graphiql,
         subscriptionProtocols: Set<SubscriptionProtocol> = [],
         websocket: WebSocket = .init(
@@ -34,6 +37,7 @@ public struct GraphQLConfig<
     ) {
         self.allowGet = allowGet
         self.allowMissingAcceptHeader = allowMissingAcceptHeader
+        self.maxBodySize = maxBodySize
         self.additionalValidationRules = additionalValidationRules
         self.ide = ide
         self.subscriptionProtocols = subscriptionProtocols
