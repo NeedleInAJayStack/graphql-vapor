@@ -100,3 +100,17 @@ app.graphql(schema: schema) { inputs in
     )
 }
 ```
+
+### Graphiti
+
+If using Graphiti to build your GraphQL schema, you must provide an instance of the `Resolver` to the `rootValue` argument. For example:
+
+```swift
+let graphqlSchema: Graphiti.Schema<Resolver, Context> = try graphqlSchema()
+app.graphql(
+    schema: graphqlSchema.schema,
+    rootValue: Resolver() // This must be included
+) { _ in
+    Context()
+}
+```
