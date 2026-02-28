@@ -37,6 +37,8 @@ Then add it to your target:
 
 To use this package, you must already have a GraphQL schema. You can use [graphql-generator](https://github.com/GraphQLSwift/graphql-generator), [Graphiti](https://github.com/GraphQLSwift/Graphiti), or [GraphQL](https://github.com/GraphQLSwift/GraphQL) to construct one.
 
+See [the HelloWorld project](https://github.com/GraphQLSwift/graphql-vapor/tree/main/Examples/HelloWorld) for a full working example.
+
 ### Basic Example
 
 ```swift
